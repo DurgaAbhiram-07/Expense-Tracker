@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="description" content="ProExpense - Professional Expense Tracker Application">
+    <title>ProExpense - Professional Expense Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <span class="logo-text">ProExpense</span>
+        </div>
+        <nav class="nav-menu">
+            <a class="nav-item active" data-view="dashboard">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-item" data-view="expenses">
+                <i class="fas fa-receipt"></i>
+                <span>Expenses</span>
+            </a>
+            <a class="nav-item" data-view="budget">
+                <i class="fas fa-chart-pie"></i>
+                <span>Budget</span>
+            </a>
+            <a class="nav-item" data-view="recurring">
+                <i class="fas fa-sync"></i>
+                <span>Recurring</span>
+            </a>
+            <a class="nav-item" data-view="reports">
+                <i class="fas fa-chart-line"></i>
+                <span>Reports</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title">
+                <h1>Dashboard</h1>
+                <p>Welcome back! Here's your financial overview.</p>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="export-menu">
+                    <button class="btn btn-secondary" id="exportBtn">
+                        <i class="fas fa-download"></i>
+                        <span style="display: none;">Export</span>
+                    </button>
+                    <div class="export-dropdown" id="exportDropdown">
+                        <div class="export-option" onclick="exportToCSV()">
+                            <i class="fas fa-file-csv"></i>
+                            Export to CSV
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-danger" id="clearAllBtn" onclick="clearAllData()" title="Clear All Data">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Clear All</span>
+                </button>
+                <button class="btn btn-primary" id="addExpenseBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Expense</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard View -->
+        <div id="dashboardView">
+            <!-- Stats Grid -->
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon expense">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="totalExpenses">$0.00</div>
+                    <div class="stat-label">Total Expenses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon budget">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="monthlyBudget">$0.00</div>
+                    <div class="stat-label">Monthly Budget</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon balance">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="balance">$0.00</div>
+                    <div class="stat-label">Balance</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Expense Trend</h3>
+                        <select class="filter-select" id="trendPeriod">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30" selected>Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">By Category</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget Progress -->
+            <div class="budget-card">
+                <div class="budget-header">
+                    <h3 class="chart-title">Budget Progress</h3>
+                    <button class="btn btn-secondary" onclick="openBudgetModal()">
+                        <i class="fas fa-edit"></i>
+                        Edit Budget
+                    </button>
+                </div>
+                <div class="budget-items" id="budgetProgress">
+                    <!-- Budget items will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="transactions-card">
+                <div class="transactions-header">
+                    <h3 class="chart-title">Recent Transactions</h3>
+                    <button class="btn btn-secondary" onclick="switchView('expenses')">View All</button>
+                </div>
+                <div class="transaction-list" id="recentTransactions">
+                    <!-- Transactions will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Recurring Expenses Summary -->
+            <div class="recurring-section">
+                <div class="recurring-header">
+                    <h3 class="recurring-title">Upcoming Recurring Expenses</h3>
+                    <button class="btn" style="background: rgba(255,255,255,0.2); color: white;" onclick="switchView('recurring')">
+                        Manage
+                    </button>
+                </div>
+                <div class="recurring-list" id="recurringSummary">
+                    <!-- Recurring items will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Expenses View -->
+        <div id="expensesView" style="display: none;">
+            <div class="transactions-card">
+                <div class="transactions-header">
+                    <h3 class="chart-title">All Expenses</h3>
+                </div>
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search expenses..." id="searchExpenses">
+                    </div>
+                    <select class="filter-select" id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="food">Food</option>
+                        <option value="transport">Transport</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="bills">Bills</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="health">Health</option>
+                        <option value="education">Education</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <div class="date-range">
+                        <input type="date" id="startDate">
+                        <span>to</span>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+                <div class="transaction-list" id="allExpenses">
+                    <!-- All expenses will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget View -->
+        <div id="budgetView" style="display: none;">
+            <div class="budget-card">
+                <div class="budget-header">
+                    <h3 class="chart-title">Monthly Budget Settings</h3>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Total Monthly Budget</label>
+                        <input type="number" class="form-input" id="monthlyBudgetInput" placeholder="Enter budget amount">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Budget Period</label>
+                        <select class="form-select" id="budgetPeriod">
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="saveBudget()">Save Budget</button>
+            </div>
+            <div class="budget-card">
+                <div class="budget-header">
+                    <h3 class="chart-title">Category Budgets</h3>
+                </div>
+                <div class="budget-items" id="categoryBudgets">
+                    <!-- Category budgets will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Recurring View -->
+        <div id="recurringView" style="display: none;">
+            <div class="budget-card">
+                <div class="budget-header">
+                    <h3 class="chart-title">Recurring Expenses</h3>
+                    <button class="btn btn-primary" onclick="openRecurringModal()">
+                        <i class="fas fa-plus"></i>
+                        Add Recurring
+                    </button>
+                </div>
+                <div class="recurring-list" id="allRecurring">
+                    <!-- All recurring expenses will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports View -->
+        <div id="reportsView" style="display: none;">
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Monthly Comparison</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="monthlyComparisonChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Category Distribution</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="reportsCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Daily Spending Heatmap</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="heatmapChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Expense Modal -->
+    <div class="modal-overlay" id="expenseModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="expenseModalTitle">Add Expense</h2>
+                <button class="modal-close" onclick="closeModal('expenseModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="expenseForm">
+                <input type="hidden" id="expenseId">
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="expenseDescription" placeholder="What did you spend on?" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-input" id="expenseAmount" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" id="expenseCategory" required>
+                            <option value="">Select category</option>
+                            <option value="food">Food</option>
+                            <option value="transport">Transport</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="bills">Bills</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="health">Health</option>
+                            <option value="education">Education</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" id="expenseDate" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <input type="text" class="form-input" id="expenseNotes" placeholder="Add notes (optional)">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('expenseModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Budget Modal -->
+    <div class="modal-overlay" id="budgetModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Budget</h2>
+                <button class="modal-close" onclick="closeModal('budgetModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="budgetForm">
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" id="budgetCategory" required>
+                        <option value="">Select category</option>
+                        <option value="food">Food</option>
+                        <option value="transport">Transport</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="bills">Bills</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="health">Health</option>
+                        <option value="education">Education</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Budget Amount</label>
+                    <input type="number" class="form-input" id="budgetAmount" placeholder="0.00" step="0.01" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('budgetModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Recurring Modal -->
+    <div class="modal-overlay" id="recurringModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Recurring Expense</h2>
+                <button class="modal-close" onclick="closeModal('recurringModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="recurringForm">
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="recurringDescription" placeholder="Expense name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-input" id="recurringAmount" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Frequency</label>
+                        <select class="form-select" id="recurringFrequency" required>
+                            <option value="">Select frequency</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('recurringModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Recurring</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText"></span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
